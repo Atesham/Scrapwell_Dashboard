@@ -2,11 +2,17 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const SEED_FILE = path.join(__dirname, '..', 'data', 'scrapwell_db.json');
+const DATA_DIR = isServerless ? '/tmp' : path.join(__dirname, '..', 'data');
 const DB_FILE = path.join(DATA_DIR, 'scrapwell_db.json');
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  // Ignore in read-only environment
 }
 
 const DEFAULT_SETTINGS = {
@@ -42,12 +48,19 @@ function loadDatabase() {
       db.search_jobs = Array.isArray(parsed.search_jobs) ? parsed.search_jobs : [];
       db.sync_logs = Array.isArray(parsed.sync_logs) ? parsed.sync_logs : [];
       db.settings = { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) };
+    } else if (fs.existsSync(SEED_FILE)) {
+      const raw = fs.readFileSync(SEED_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      db.leads = Array.isArray(parsed.leads) ? parsed.leads : [];
+      db.search_jobs = Array.isArray(parsed.search_jobs) ? parsed.search_jobs : [];
+      db.sync_logs = Array.isArray(parsed.sync_logs) ? parsed.sync_logs : [];
+      db.settings = { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) };
+      saveDatabase();
     } else {
       saveDatabase();
     }
   } catch (err) {
-    console.error('Failed to load database file, initializing empty:', err.message);
-    saveDatabase();
+    console.warn('Database load notice:', err.message);
   }
 }
 
@@ -57,7 +70,7 @@ function saveDatabase() {
     fs.writeFileSync(tempFile, JSON.stringify(db, null, 2), 'utf8');
     fs.renameSync(tempFile, DB_FILE);
   } catch (err) {
-    console.error('Failed to save database:', err.message);
+    console.warn('Database save notice (serverless in-memory mode):', err.message);
   }
 }
 

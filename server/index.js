@@ -632,7 +632,20 @@ app.post('/api/settings', (req, res) => {
   res.json(updated);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`ScrapWell Kabadiwala Finder server running on port ${PORT}`);
+// Root fallback for SPA (Express 5 compatible)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+    return res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
+  }
+  next();
 });
+
+// Export Express app for Vercel Serverless Function
+module.exports = app;
+
+// Start server when running directly in local / standalone Node
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`ScrapWell Kabadiwala Finder server running on port ${PORT}`);
+  });
+}
