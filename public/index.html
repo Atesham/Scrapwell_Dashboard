@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScrapWell — Kabadiwala & Scrap Dealer Finder</title>
+  <meta name="description"
+    content="Deep-scrapes Google Maps, localized web directories, and Indian postal records to find verified kabadiwalas, scrap dealers, and recycling centers for any Indian PIN code.">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/styles.css?v=3.0">
+</head>
+
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="app-navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <div class="brand-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">ScrapWell</span>
+          <span class="brand-subtitle">Kabadiwala & Scrap Acquisition</span>
+        </div>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="nav-btn nav-btn-outline" id="btn-nav-sheets-status" title="Configure Google Sheets Auto-Sync">
+          <span class="status-indicator-dot" id="sheets-status-dot"></span>
+          <span id="sheets-status-text" class="nav-text">Google Sheets</span>
+          <span class="nav-text-mobile">Sheets</span>
+        </button>
+        <button class="nav-btn nav-btn-outline" id="btn-nav-copy-sheets"
+          title="Copy all leads to clipboard (Ctrl+V into Sheets)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span class="nav-text">Copy for Sheets (Ctrl+V)</span>
+          <span class="nav-text-mobile">Copy</span>
+        </button>
+        <button class="nav-btn nav-btn-primary" id="btn-nav-export-csv" title="Download all leads as CSV file">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="nav-text">Download CSV</span>
+          <span class="nav-text-mobile">CSV</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Homepage Container -->
+  <main class="homepage-main">
+    <div class="homepage-container">
+
+      <!-- Hero Section & Search Engine -->
+      <section class="hero-section">
+
+        <h1 class="hero-title">Find Kabadiwalas & Scrap Dealers</h1>
+
+        <!-- Big Search Command Card -->
+        <div class="search-command-card">
+          <form id="pincode-search-form" class="search-form">
+            <div class="search-input-group">
+              <div class="search-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <input type="text" id="input-pincode" class="pincode-input"
+                placeholder="Enter 6-Digit Indian PIN Code (e.g. 122001)" maxlength="6" pattern="[1-9][0-9]{5}"
+                autocomplete="off" autofocus required />
+              <button type="button" class="btn-clear-input" id="btn-clear-pincode" title="Clear input"
+                style="display: none;">&times;</button>
+            </div>
+
+            <div class="search-action-row">
+              <div class="area-coverage-badge">
+                <span class="coverage-dot"></span>
+                <span>Complete Area Coverage • All Localities & Wards in PIN Code</span>
+              </div>
+
+              <button type="submit" class="btn-deep-scrape" id="btn-submit-search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span>Search Partners</span>
+              </button>
+            </div>
+
+            <!-- Category Filter Checkboxes -->
+            <div class="categories-container">
+              <span class="categories-label">Scrape Categories:</span>
+              <div class="category-chips">
+                <label class="category-chip">
+                  <input type="checkbox" name="cat" value="kabadiwala" checked />
+                  <span>Kabadiwala (Doorstep)</span>
+                </label>
+                <label class="category-chip">
+                  <input type="checkbox" name="cat" value="scrap_dealer" checked />
+                  <span>Scrap Dealers</span>
+                </label>
+                <label class="category-chip">
+                  <input type="checkbox" name="cat" value="raddi_wala" checked />
+                  <span>Raddi & Waste Paper</span>
+                </label>
+                <label class="category-chip">
+                  <input type="checkbox" name="cat" value="metal_scrap" checked />
+                  <span>Metal & Battery Depot</span>
+                </label>
+                <label class="category-chip">
+                  <input type="checkbox" name="cat" value="recycling" checked />
+                  <span>Recycling Centers</span>
+                </label>
+              </div>
+            </div>
+          </form>
+
+
+        </div>
+      </section>
+
+      <!-- Live Deep Scraping Progress Card -->
+      <section class="progress-section" id="search-progress-container" style="display: none;">
+        <!-- Injected dynamically by app.js -->
+      </section>
+
+      <!-- Results & Action Section -->
+      <section class="results-section" id="search-results-container">
+        <!-- Injected dynamically by app.js -->
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Lead Dossier Slide-Over Drawer -->
+  <div class="drawer-backdrop" id="drawer-backdrop">
+    <div class="lead-drawer" id="lead-drawer">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+
+  <!-- Modal Dialog Backdrop (Google Sheets Webhook & Settings) -->
+  <div class="modal-backdrop" id="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" id="modal-dialog">
+      <!-- Dynamically populated -->
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Script -->
+  <script type="module" src="/js/app.js?v=3.0"></script>
+</body>
+
+</html>

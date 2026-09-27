@@ -32,6 +32,14 @@ const DEFAULT_SETTINGS = {
   follow_up_interval_days: 2
 };
 
+// Explicitly require seed data so Vercel bundler / NFT tracer packages it with Serverless Function
+let bundledSeed = null;
+try {
+  bundledSeed = require('../data/scrapwell_db.json');
+} catch (e) {
+  // Fallback to filesystem if not directly bundle-resolved
+}
+
 let db = {
   leads: [],
   search_jobs: [],
@@ -48,6 +56,12 @@ function loadDatabase() {
       db.search_jobs = Array.isArray(parsed.search_jobs) ? parsed.search_jobs : [];
       db.sync_logs = Array.isArray(parsed.sync_logs) ? parsed.sync_logs : [];
       db.settings = { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) };
+    } else if (bundledSeed) {
+      db.leads = Array.isArray(bundledSeed.leads) ? [...bundledSeed.leads] : [];
+      db.search_jobs = Array.isArray(bundledSeed.search_jobs) ? [...bundledSeed.search_jobs] : [];
+      db.sync_logs = Array.isArray(bundledSeed.sync_logs) ? [...bundledSeed.sync_logs] : [];
+      db.settings = { ...DEFAULT_SETTINGS, ...(bundledSeed.settings || {}) };
+      saveDatabase();
     } else if (fs.existsSync(SEED_FILE)) {
       const raw = fs.readFileSync(SEED_FILE, 'utf8');
       const parsed = JSON.parse(raw);

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const DB = require('./db');
 const { isValidIndianPincode, resolvePincode } = require('./services/pincodeResolver');
 const { generateQueries } = require('./services/queryGenerator');
@@ -18,9 +19,20 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve frontend static assets if built
+// Serve frontend static assets if built or available in public / client
+const publicDir = path.join(__dirname, '..', 'public');
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
 const clientPublic = path.join(__dirname, '..', 'client');
+
+if (fs.existsSync(publicDir)) {
+  app.use(express.static(publicDir, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js') || filePath.endsWith('.html') || filePath.endsWith('.css')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      }
+    }
+  }));
+}
 app.use(express.static(clientDist));
 app.use(express.static(clientPublic, {
   setHeaders: (res, filePath) => {
@@ -29,6 +41,45 @@ app.use(express.static(clientPublic, {
     }
   }
 }));
+
+// URL normalization middleware for Vercel serverless function rewrites
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/api') && !req.url.startsWith('/css') && !req.url.startsWith('/js')) {
+    const apiRoutes = ['/search', '/leads', '/analytics', '/history', '/settings', '/sheets', '/whatsapp', '/health'];
+    if (apiRoutes.some(route => req.url.startsWith(route)) || req.url === '/' || req.url === '') {
+      req.url = '/api' + (req.url === '/' ? '' : req.url);
+    }
+  }
+  next();
+});
+
+// Health check and root API status endpoints for Vercel
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'ScrapWell Production API',
+    runtime: process.env.VERCEL ? 'vercel-serverless' : 'standalone-node',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'ScrapWell Production API',
+    version: '1.0.0',
+    endpoints: [
+      '/api/health',
+      '/api/search/start',
+      '/api/leads',
+      '/api/analytics',
+      '/api/history',
+      '/api/settings',
+      '/api/sheets/sync',
+      '/api/sheets/export/csv'
+    ]
+  });
+});
 
 // ==================== SEARCH APIS ====================
 
@@ -634,10 +685,23 @@ app.post('/api/settings', (req, res) => {
 
 // Root fallback for SPA (Express 5 compatible)
 app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
-    return res.sendFile(path.join(__dirname, '..', 'client', 'index.html'));
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    const pubIndex = path.join(__dirname, '..', 'public', 'index.html');
+    if (fs.existsSync(pubIndex)) {
+      return res.sendFile(pubIndex);
+    }
+    const clientIndex = path.join(__dirname, '..', 'client', 'index.html');
+    if (fs.existsSync(clientIndex)) {
+      return res.sendFile(clientIndex);
+    }
+    return res.sendFile(path.join(__dirname, '..', 'index.html'));
   }
   next();
+});
+
+// Unmatched API route handler
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl || req.url}` });
 });
 
 // Export Express app for Vercel Serverless Function
